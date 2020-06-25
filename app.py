@@ -11,7 +11,6 @@ from datetime import date
 from unicodedata import normalize
 from Levenshtein import distance
 import geopandas as gpd
-import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 import folium
 from folium.features import DivIcon
