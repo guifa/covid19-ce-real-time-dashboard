@@ -1,1 +1,5 @@
-gunicorn==20.0.4
+geopandas
+dash
+folium
+python-levenshtein
+gunicorn
