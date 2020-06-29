@@ -148,7 +148,7 @@ server = app.server
 
 app.layout = html.Div([
         html.Div([
-            html.H1('Casos confirmados de Covid-19 em Fortaleza-CE'),
+            html.H1('Casos confirmados de Covid-19 em Fortaleza-CE '),
             html.Iframe(id='map', srcDoc=open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(), width='800', height='800', className='iframe')
         ], className='two.columns')
     ], className='row')
