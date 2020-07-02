@@ -8,141 +8,181 @@ from plotly.subplots import make_subplots
 import pandas as pd
 import requests
 from datetime import date
+from datetime import datetime
 from unicodedata import normalize
 from Levenshtein import distance
 import geopandas as gpd
 from shapely.geometry import Polygon
 import folium
 from folium.features import DivIcon
+import pathlib
 
-# response = requests.get(f"https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus?dataInicio=2020-01-01&dataFim={date.today()}")
-# json = response.json()
+# Remove .loc warning s
+pd.options.mode.chained_assignment = None
 
-# if response.status_code == 200:
-#     cases_covid = pd.DataFrame(json)
+# Path to the data folder
+data_folder = pathlib.Path().absolute() / 'data'
 
-# # Oficial data with names of neighborhoods
-# bairros = pd.read_csv('http://dados.fortaleza.ce.gov.br/dataset/8d20208f-25d6-4ca3-b0bc-1b9b371bd062/resource/3ba368fe-d585-4681-a987-6e288bdfffe0/download/limitebairro.csv')
+# Get data from API
+data_file = data_folder / f'covid19_{date.today()}.csv'
 
-# def remove_accents(txt):
-#     return normalize('NFKD', txt).encode('ASCII', 'ignore').decode('ASCII')
+if  data_file.exists():
+    # Read csv from existing file
+    covid_cases = pd.read_csv(data_file, encoding='latin-1')
+else:
+    # Read csv from url
+    covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
+    covid_cases.to_csv(data_file, index=False, encoding='latin-1')
 
-# def remove_special_characters(text):
-#     a_string = text
-#     alphanumeric = ""
+# Get neighborhoods geospatial data from official database
+geojson_file = data_folder / 'neighborhood_geospatial_information.geojson'
 
-#     for character in a_string:
-#         if character == " ":
-#             alphanumeric += character
-#         else:
-#             if character.isalnum():
-#                 alphanumeric += character
+if  geojson_file.exists():
+    # Read csv from existing file
+    geo_neighborhoods = gpd.read_file(geojson_file)
+else:
+    # Read json from url
+    geo_neighborhoods = gpd.read_file('https://dados.fortaleza.ce.gov.br/dataset/8d20208f-25d6-4ca3-b0bc-1b9b371bd062/resource/781b13ec-b479-4b97-a742-d3b7144672ee/download/limitebairro.json')
+    geo_neighborhoods.to_file(geojson_file, driver='GeoJSON')
 
-#     return alphanumeric
+def remove_accents(txt):
+    return normalize('NFKD', txt).encode('ASCII', 'ignore').decode('ASCII')
 
-# def clean_neighborhood_names(text):
-#     no_special_characters = remove_special_characters(text)
-#     trim_spaces = no_special_characters.strip()
-#     cleaned_neighborhood_names = remove_accents(trim_spaces)
+def remove_special_characters(text):
+    a_string = text
+    alphanumeric = ""
 
-#     return cleaned_neighborhood_names
+    for character in a_string:
+        if character == " ":
+            alphanumeric += character
+        else:
+            if character.isalnum():
+                alphanumeric += character
 
-# def min_edit_distance(word, list_of_words):    
-#     if word == 'NAO INFORMADO':
-#         return 'NAO INFORMADO'
-#     word_dict = {}
-#     for aux in list_of_words:
-#         word_dict[aux] = distance(aux, word)
-#     return min(word_dict.keys(), key=(lambda k: word_dict[k]))
+    return alphanumeric
 
-# cases_covid_fortaleza = cases_covid[cases_covid['municipioPaciente'] == 'FORTALEZA']
+def clean_text(raw_text):
+    cleaned_text = remove_special_characters(raw_text)
+    cleaned_text = cleaned_text.strip()
+    cleaned_text = remove_accents(cleaned_text)
+    cleaned_text = cleaned_text.upper()
 
-# cases_covid_fortaleza_no_nan = cases_covid_fortaleza
+    return cleaned_text
 
-# cases_covid_fortaleza_no_nan['bairroPaciente'].fillna('NAO INFORMADO', inplace=True)
+def min_edit_distance(word, list_of_words):    
+    if word == 'NAO INFORMADO':
+        return 'NAO INFORMADO'
 
-# cases_covid_fortaleza_no_nan.loc[:, 'bairroPaciente'] = cases_covid_fortaleza_no_nan['bairroPaciente'].map(clean_neighborhood_names)
+    word_dict = {}
+    
+    for aux in list_of_words:
+        word_dict[aux] = distance(aux, word)
 
-# cases_covid_fortaleza_cleaned = cases_covid_fortaleza_no_nan
+    return min(word_dict.keys(), key=(lambda k: word_dict[k]))
 
-# neighborhood_list = bairros['NOME'].tolist()
+# Rename columns
+covid_cases.columns = ['bairroPaciente', 'classificacaoEstadoSivep', 'codigoMunicipioPaciente','codigoPaciente', 'comorbidadeAsmaSivep', 'comorbidadeCardiovascularSivep', 'comorbidadeDiabetesSivep', 
+                       'comorbidadeHematologiaSivep', 'comorbidadeImunodeficienciaSivep', 'comorbidadeNeurologiaSivep', 'comorbidadeObesidadeSivep', 'comorbidadePneumopatiaSivep', 'comorbidadePuerperaSivep', 
+                       'comorbidadeRenalSivep', 'comorbidadeSindromedownSivep', 'dataColetaExame', 'dataEntradaUtisSivep', 'dataEvolucaoCasoSivep', 'dataInicioSintomas', 'dataInternacaoSivep', 'dataNotificacao', 
+                       'dataObito', 'dataResultadoExame', 'dataSaidaUtisSivep', 'dataSolicitacaoExame',  'estadoPaciente', 'evolucaoCasoSivep', 'idadePaciente', 'idSivep', 'municipioPaciente', 'obitoConfirmado', 
+                       'paisPaciente', 'resultadoFinalExame', 'sexoPaciente']
 
-# cases_covid_fortaleza_cleaned.loc[:, 'bairroPaciente'] = cases_covid_fortaleza_cleaned['bairroPaciente'].apply(min_edit_distance, list_of_words = neighborhood_list)
+# Convert string to datetime
+covid_cases['dataNotificacao'] = pd.to_datetime(covid_cases['dataNotificacao'], errors='coerce')
+covid_cases['dataInicioSintomas'] = pd.to_datetime(covid_cases['dataInicioSintomas'], errors='coerce')
+covid_cases['dataColetaExame'] = pd.to_datetime(covid_cases['dataColetaExame'], errors='coerce')
+covid_cases['dataResultadoExame'] = pd.to_datetime(covid_cases['dataResultadoExame'], errors='coerce')
 
-# cases_covid_fortaleza_cleaned_grouped_neighborhood = cases_covid_fortaleza_cleaned.groupby('bairroPaciente')
+# Selecting rows of the city Fortaleza
+covid_cases = covid_cases[(covid_cases['municipioPaciente'] == 'FORTALEZA')]
 
-# cases_covid_fortaleza_cleaned_positive = cases_covid_fortaleza_cleaned[cases_covid_fortaleza_cleaned['resultadoFinalExame'] == 'Positivo']
+# Get only positive results
+covid_cases = covid_cases[(covid_cases['resultadoFinalExame'] == 'Positivo')]
 
-# cases_covid_fortaleza_cleaned_positive_deaths = cases_covid_fortaleza_cleaned_positive[cases_covid_fortaleza_cleaned_positive['obitoConfirmado'] == True]
+# Remove duplicate codes keeping the first appearance
+covid_cases = covid_cases.sort_values('bairroPaciente').drop_duplicates(subset='codigoPaciente', keep='first')
 
-# geo_bairros = gpd.read_file('https://dados.fortaleza.ce.gov.br/dataset/8d20208f-25d6-4ca3-b0bc-1b9b371bd062/resource/781b13ec-b479-4b97-a742-d3b7144672ee/download/limitebairro.json')
+# Remove NaNs from neighborhoods
+covid_cases['bairroPaciente'].fillna('NAO INFORMADO', inplace=True)
 
-# map_nao_informado = Polygon([(-38.5348892, -3.6799472),
-#                              (-38.5348892, -3.6799472),
-#                              (-38.5359192, -3.6967352),
-#                              (-38.5084534, -3.697763),
-#                              (-38.5060501, -3.6830307),
-#                              (-38.5348892, -3.6799472)])
+# Clean neighborhoods names
+covid_cases['bairroPaciente'] = covid_cases['bairroPaciente'].map(clean_text)
 
-# df_bairros_nao_informados = pd.DataFrame({'id': ['Limite Bairro.nao-informado'],
-#                                           'GID': [9999],
-#                                           'NOME': ['NAO INFORMADO'],
-#                                           'geometry': map_nao_informado})
+# Get official neighborhoods names
+official_neighborhoods_names = geo_neighborhoods['NOME'].tolist()
 
-# gdf_bairros_nao_informados = gpd.GeoDataFrame(df_bairros_nao_informados)
+# For each row it will compare the name of the row neighborhood to the official list and pick the closest name based on the minimum edit distance
+covid_cases['bairroPaciente'] = covid_cases['bairroPaciente'].apply(min_edit_distance, list_of_words = official_neighborhoods_names)
 
-# todos_bairros = pd.concat([geo_bairros, gdf_bairros_nao_informados])
+positive_cases_by_neighborhood = covid_cases.groupby('bairroPaciente').count()['codigoPaciente']
 
-# casos_positivos = cases_covid_fortaleza_cleaned_positive.groupby('bairroPaciente').count()['codigoPaciente']
+# Get positive cases of rows with neighborhood information
+positive_cases_by_neighborhood_only_known_names = covid_cases[covid_cases['bairroPaciente'] != 'NAO INFORMADO'].groupby('bairroPaciente').count()['codigoPaciente']
 
-# casos_positivos_total = cases_covid_fortaleza_cleaned_positive['codigoPaciente'].count()
+# Get positive cases of rows with no neighborhood information
+positive_cases_no_information_neighborhoods = covid_cases[covid_cases['bairroPaciente'] == 'NAO INFORMADO'].count()['codigoPaciente']
 
-# obitos_por_covid = cases_covid_fortaleza_cleaned_positive_deaths.groupby('bairroPaciente').count()['codigoPaciente']
+positive_cases_total = covid_cases['codigoPaciente'].count()
 
-# obitos_total = cases_covid_fortaleza_cleaned_positive_deaths['codigoPaciente'].count()
+deaths_by_neighborhood = covid_cases[covid_cases['obitoConfirmado'] == True].groupby('bairroPaciente').count()['codigoPaciente']
 
-# geo_todos_bairros_casos_positivos = pd.merge(left=todos_bairros, right=casos_positivos, left_on='NOME', right_on='bairroPaciente', how='left')
-# geo_todos_bairros_casos_positivos.rename(columns={'codigoPaciente': 'CASOS_POSITIVOS'}, inplace=True)
-# geo_todos_bairros_casos_positivos['CASOS_POSITIVOS'].fillna(0, inplace=True)
-# geo_todos_bairros_casos_positivos
+# Get deaths of rows with no neighborhood information
+deaths_no_information_neighborhoods = covid_cases[(covid_cases['obitoConfirmado'] == True) & (covid_cases['bairroPaciente'] == 'NAO INFORMADO')].count()['codigoPaciente']
 
-# geo_todos_bairros_casos_positivos_mortes = pd.merge(left=geo_todos_bairros_casos_positivos, right=obitos_por_covid, left_on='NOME', right_on='bairroPaciente', how='left')
-# geo_todos_bairros_casos_positivos_mortes.rename(columns={'codigoPaciente': 'OBITOS_CONFIRMADOS'}, inplace=True)
-# geo_todos_bairros_casos_positivos_mortes['OBITOS_CONFIRMADOS'].fillna(0, inplace=True)
-# geo_todos_bairros_casos_positivos_mortes
+deaths_total = covid_cases[covid_cases['obitoConfirmado'] == True].count()['codigoPaciente']
 
-# geo_todos_bairros_casos_positivos_mortes_crs_4326 = geo_todos_bairros_casos_positivos_mortes.to_crs(epsg=4326)
+# Merge geo_neighborhoods and positive_cases_by_neighborhood
+geo_neighborhoods = pd.merge(left=geo_neighborhoods, right=positive_cases_by_neighborhood, left_on='NOME', right_on='bairroPaciente', how='left')
+geo_neighborhoods.rename(columns={'codigoPaciente': 'CASOS_POSITIVOS'}, inplace=True)
+geo_neighborhoods['CASOS_POSITIVOS'].fillna(0, inplace=True)
 
-# geo_todos_bairros_casos_positivos_mortes_crs_4326_json = geo_todos_bairros_casos_positivos_mortes_crs_4326.to_json()
+# Merge geo_neighborhoods and deaths_by_neighborhood
+geo_neighborhoods = pd.merge(left=geo_neighborhoods, right=deaths_by_neighborhood, left_on='NOME', right_on='bairroPaciente', how='left')
+geo_neighborhoods.rename(columns={'codigoPaciente': 'OBITOS_CONFIRMADOS'}, inplace=True)
+geo_neighborhoods['OBITOS_CONFIRMADOS'].fillna(0, inplace=True)
 
+# Convert to WGS84
+geo_neighborhoods = geo_neighborhoods.to_crs(epsg=4326).to_json()
 
-# m = folium.Map(location=[-3.7981414, -38.5218430], zoom_start=12)
+# Create folium map
+map = folium.Map(location=[-3.7981414, -38.5218430], zoom_start=12)
 
-# choropleth = folium.Choropleth(
-#             geo_data=geo_todos_bairros_casos_positivos_mortes_crs_4326_json,
-#             name='choropleth',
-#             data=casos_positivos,
-#             columns=['codigoPaciente'],
-#             key_on='feature.properties.NOME',
-#             fill_color='YlOrRd',
-#             fill_opacity=0.6,
-#             line_opacity=0.2,
-#             highlight=True,
-#             legend_name='Casos confirmados de Covid-19 em Fortaleza-CE'
-# ).add_to(m)
+choropleth = folium.Choropleth(
+            geo_data=geo_neighborhoods,
+            name='choropleth',
+            data=positive_cases_by_neighborhood_only_known_names,
+            columns=['codigoPaciente'],
+            key_on='feature.properties.NOME',
+            fill_color='YlOrRd',
+            fill_opacity=0.6,
+            line_opacity=0.2,
+            highlight=True,
+            legend_name='Casos confirmados de Covid-19 em Fortaleza-CE'
+).add_to(map)
 
-# choropleth.geojson.add_child(folium.features.GeoJsonTooltip(fields=['NOME', 'CASOS_POSITIVOS', 'OBITOS_CONFIRMADOS'], aliases=['Bairro:', 'Casos confirmados:', 'Óbitos confirmados:']))
+choropleth.geojson.add_child(folium.features.GeoJsonTooltip(fields=['NOME', 'CASOS_POSITIVOS', 'OBITOS_CONFIRMADOS'], aliases=['Bairro:', 'Casos confirmados:', 'Óbitos confirmados:']))
 
-# folium.map.Marker(
-#     [-3.6754932, -38.4483719],
-#     icon=DivIcon(
-#         icon_size=(150,150),
-#         icon_anchor=(0,0),
-#         html=f'<div style="font-size:10;font-weight:bold">Total de Casos Confirmados: {casos_positivos_total}<br>Total de Óbitos Confirmados: {obitos_total}</div>',
-#         )
-#     ).add_to(m)
+folium.map.Marker(
+    [-3.68, -38.5399999],
+    icon=DivIcon(
+        icon_size=(150,100),
+        icon_anchor=(0,0),
+        html=f'<div style="font-size:10px;">Bairro: NÃO INFORMADO<br> Casos Confirmados: {positive_cases_no_information_neighborhoods}<br>Óbitos Confirmados: {deaths_no_information_neighborhoods}</div>',
+        )
+    ).add_to(map)
 
-# m.save('Covid-19_confirmed_cases_fortaleza.html')
+folium.map.Marker(
+    [-3.7, -38.3999999],
+    icon=DivIcon(
+        icon_size=(400,300),
+        icon_anchor=(0,0),
+        html=f'<div style="font-size:20px;font-weight:bold">Total de Casos Confirmados: {positive_cases_total}<br>Total de Óbitos Confirmados: {deaths_total}</div>',
+        )
+    ).add_to(map)
+
+map
+
+map.save('Covid-19_confirmed_cases_fortaleza.html')
 
 app = dash.Dash(__name__)
 
@@ -150,7 +190,7 @@ server = app.server
 
 app.layout = html.Div([
         html.Div([
-            html.H1('Casos confirmados de Covid-19 em Fortaleza-CE '),
+            html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {datetime.now().strftime("%d/%m/%Y")}'),
             html.Iframe(id='map', srcDoc=open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(), width='800', height='800', className='iframe')
         ], className='two.columns')
     ], className='row')
