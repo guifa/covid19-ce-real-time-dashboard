@@ -11,16 +11,21 @@ import map
 
 queue = Queue(connection=conn)
 
-def job(): 
+def job():
+    print('Start')
+
+    print('Get data')
     # Get required data
     covid_cases = data.getCovidCases()
     geo_neighborhoods = data.getGeoData()
-
+    
+    print('Clean data')
     # Clean data
     clean_data = data_cleaning.clean_data(covid_cases, geo_neighborhoods)
-    
+    print('Create map')
     # Create map
     map.create_map(clean_data)
+    print('finish')
 
 queue.enqueue(job)
 
