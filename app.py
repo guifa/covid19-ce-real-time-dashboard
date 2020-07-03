@@ -22,8 +22,6 @@ def job():
     # Create map
     map.create_map(clean_data)
 
-    return clean_data
-
 queue.enqueue(job)
 
 # Create app
