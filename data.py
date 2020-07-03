@@ -1,24 +1,18 @@
 import pandas as pd
 import geopandas as gpd
-from datetime import date
+from datetime import date, timedelta
 import pathlib
 
 
 # Path to the data folder
 data_folder = pathlib.Path().absolute() / 'data'
 
-def getCovidCases():    
-    # Path to the data file
-    data_file = data_folder / f'covid19_{date.today()}.csv'
+today = date.today()
+yesterday = today - timedelta(days=1)
 
-    # Get data from API
-    if  data_file.exists():
-        # Read csv from existing file
-        covid_cases = pd.read_csv(data_file, encoding='latin-1')
-    else:
-        # Read csv from url
-        covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
-        covid_cases.to_csv(data_file, index=False, encoding='latin-1')
+def getCovidCases():
+    # Read csv from url
+    covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
     
     return covid_cases
 
