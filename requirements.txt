@@ -3,3 +3,5 @@ dash
 folium
 python-levenshtein
 gunicorn
+rq
+schedule
