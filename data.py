@@ -19,8 +19,9 @@ def getCovidCases():
         covid_cases = pd.read_csv(data_file, encoding='latin-1')
     else:
         # Read csv from url
-        covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
         print('Data 3')
+        covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
+        print(covid_cases[(covid_cases['MUNICIPIOPACIENTE'] == 'FORTALEZA') & (covid_cases['RESULTADOFINALEXAME'] == 'Positivo')].count())
         covid_cases.to_csv(data_file, index=False, encoding='latin-1')
     
     return covid_cases
