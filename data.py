@@ -11,14 +11,16 @@ def getCovidCases():
     
     # Path to the data file
     data_file = data_folder / f'covid19_{date.today()}.csv'
-
+    print('Data 1')
     # Get data from API
     if  data_file.exists():
+        print('Data 2')
         # Read csv from existing file
         covid_cases = pd.read_csv(data_file, encoding='latin-1')
     else:
         # Read csv from url
         covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
+        print('Data 3')
         covid_cases.to_csv(data_file, index=False, encoding='latin-1')
     
     return covid_cases
