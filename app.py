@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
+import pytz
 import dash
 import dash_html_components as html
 import dash_core_components as dcc
@@ -51,7 +52,7 @@ def update_map(n):
 @app.callback(Output('title-container', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_title(n):
-    return html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}')
+    return html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {(pytz.utc.localize(datetime.utcnow()) - timedelta(hours=3)).strftime("%d/%m/%Y, %H:%M:%S")}')
 
 if __name__ == '__main__':
     app.run_server(dev_tools_hot_reload=False)
