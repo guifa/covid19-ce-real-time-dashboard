@@ -32,12 +32,12 @@ server = app.server
 
 app.layout = html.Div([
         html.Div([
-            html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {datetime.now().strftime("%d/%m/%Y")}'),
+            html.Div(id='title-container'),
             html.A('Github onde está hospedado o código.', href='https://github.com/guifa/covid19-ce-real-time-dashboard'),
             html.Div(id='map-container'),            
             dcc.Interval(
             id='interval-component',
-            interval=5*1000, # in milliseconds
+            interval=30*1000, # in milliseconds
             n_intervals=0
         )
         ], className='two.columns')
@@ -48,5 +48,10 @@ app.layout = html.Div([
 def update_map(n):
     return html.Iframe(id='map', srcDoc=open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(), width='800', height='800', className='iframe')
 
+@app.callback(Output('title-container', 'children'),
+              [Input('interval-component', 'n_intervals')])
+def update_title(n):
+    return html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}')
+
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(dev_tools_hot_reload=False)
