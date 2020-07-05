@@ -25,9 +25,12 @@ def job():
     map.create_map(clean_data)
 
     map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
+
     print(map_html.split('Total de Casos Confirmados: ')[1])
 
-queue.enqueue(job)
+    return map_html
+
+map_html_job = queue.enqueue(job)
 
 # Create app
 app = dash.Dash(__name__)
@@ -50,7 +53,7 @@ app.layout = html.Div([
 @app.callback(Output('map-container', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_map(n):
-    map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
+    map_html = map_html_job.result
             
     return [
         html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
