@@ -32,49 +32,29 @@ def job():
 
 map_html_job = queue.enqueue(job)
 
-map_html_ = job()
-
 # Create app
 app = dash.Dash(__name__)
 
 server = app.server
 
-app.layout = html.Div([
+def serve_layout():
+    if map_html_job.result is None:
+        map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
+    else:
+        map_html = map_html_job.result
+
+    return html.Div([
         html.Div([
-            html.Div(id='title-container'),
+            html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {(pytz.utc.localize(datetime.utcnow()) - timedelta(hours=3)).strftime("%d/%m/%Y, %H:%M:%S")}'),
             html.A('Github onde está hospedado o código.', href='https://github.com/guifa/covid19-ce-real-time-dashboard'),
-            html.Div(id='map-container'),            
-            dcc.Interval(
-            id='interval-component',
-            interval=30*1000, # in milliseconds
-            n_intervals=0
-        )
+            html.Div([
+                html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
+                html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
+            ])
         ], className='two.columns')
     ], className='row')
 
-@app.callback(Output('map-container', 'children'),
-              [Input('interval-component', 'n_intervals')])
-def update_map(n):
-    if map_html_job.result is None:
-        map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
-
-        return [
-            html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
-            html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
-        ]
-    else:
-        map_html = map_html_job.result
-        return [
-            html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
-            html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
-        ]
-            
-    
-
-@app.callback(Output('title-container', 'children'),
-              [Input('interval-component', 'n_intervals')])
-def update_title(n):
-    return html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {(pytz.utc.localize(datetime.utcnow()) - timedelta(hours=3)).strftime("%d/%m/%Y, %H:%M:%S")}')
+app.layout = serve_layout
 
 if __name__ == '__main__':
     app.run_server(dev_tools_hot_reload=False)
