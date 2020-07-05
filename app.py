@@ -22,7 +22,10 @@ def job():
     clean_data = data_cleaning.clean_data(covid_cases, geo_neighborhoods)
     
     # Create map
-    map.create_map(clean_data)    
+    map.create_map(clean_data)
+
+    map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
+    print(map_html.split('Total de Casos Confirmados: ')[1])
 
 queue.enqueue(job)
 
