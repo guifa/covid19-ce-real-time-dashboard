@@ -49,6 +49,7 @@ def serve_layout():
             html.A('Github onde está hospedado o código.', href='https://github.com/guifa/covid19-ce-real-time-dashboard'),
             html.Div([
                 html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
+                html.Div(map_html_job.result, hidden=True),
                 html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
             ])
         ], className='two.columns')
