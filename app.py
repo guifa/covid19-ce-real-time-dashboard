@@ -48,9 +48,11 @@ app.layout = html.Div([
               [Input('interval-component', 'n_intervals')])
 def update_map(n):
     map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
-    print(map_html.split('Total de Casos Confirmados: ')[1])
-
-    return html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
+            
+    return [
+        html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
+        html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
+    ]
 
 @app.callback(Output('title-container', 'children'),
               [Input('interval-component', 'n_intervals')])
