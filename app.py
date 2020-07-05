@@ -44,8 +44,7 @@ def job():
 
     return map_html
 
-# map_html_job = queue.enqueue(job)
-job()
+map_html_job = queue.enqueue(job)
 
 # Create app
 app = dash.Dash(__name__)
