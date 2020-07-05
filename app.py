@@ -19,11 +19,11 @@ cursor = db_connection.conn.cursor()
 #                  (ID INT PRIMARY KEY NOT NULL,
 #                   MAP_HTML TEXT NOT NULL);''')
 
-db_connection.conn.commit()
+# db_connection.conn.commit()
 
-cursor.execute('INSERT INTO COVID19 (ID,MAP_HTML) VALUES (1, %s)', (open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(),))
+# cursor.execute('INSERT INTO COVID19 (ID,MAP_HTML) VALUES (1, %s)', (open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(),))
 
-db_connection.conn.commit()
+# db_connection.conn.commit()
 
 def job():
     cursor = db_connection.conn.cursor()
