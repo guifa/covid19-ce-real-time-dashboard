@@ -10,10 +10,22 @@ from worker import conn
 import data
 import data_cleaning
 import map
+import db_connection
 
 queue = Queue(connection=conn)
 
+cursor = db_connection.conn.cursor()
+cursor.execute('''CREATE TABLE COVID19
+                 (ID INT PRIMARY KEY NOT NULL,
+                  MAP_HTML TEXT NOT NULL);''')
+
+db_connection.conn.commit()
+
+cursor.execute('INSERT INTO COVID19 (ID,MAP_HTML) VALUES (1, %s)', (open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(),))
+
 def job():
+    cursor = db_connection.conn.cursor()
+    
     # Get required data
     covid_cases = data.getCovidCases()
     geo_neighborhoods = data.getGeoData()
@@ -26,11 +38,14 @@ def job():
 
     map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
 
+    cursor.execute('UPDATE COVID19 SET MAP_HTML = %s WHERE ID = 1', (map_html,))
+
     print(map_html.split('Total de Casos Confirmados: ')[1])
 
     return map_html
 
-map_html_job = queue.enqueue(job)
+# map_html_job = queue.enqueue(job)
+job()
 
 # Create app
 app = dash.Dash(__name__)
@@ -38,10 +53,10 @@ app = dash.Dash(__name__)
 server = app.server
 
 def serve_layout():
-    if map_html_job.result is None:
-        map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
-    else:
-        map_html = map_html_job.result
+    cursor.execute("SELECT * FROM COVID19")
+    row = cursor.fetchone()
+
+    map_html = row[1]
 
     return html.Div([
         html.Div([
@@ -49,7 +64,6 @@ def serve_layout():
             html.A('Github onde está hospedado o código.', href='https://github.com/guifa/covid19-ce-real-time-dashboard'),
             html.Div([
                 html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
-                html.Div(map_html_job.result, hidden=True),
                 html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
             ])
         ], className='two.columns')
