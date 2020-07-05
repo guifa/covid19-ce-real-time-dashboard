@@ -32,6 +32,8 @@ def job():
 
 map_html_job = queue.enqueue(job)
 
+map_html_ = job()
+
 # Create app
 app = dash.Dash(__name__)
 
@@ -53,12 +55,21 @@ app.layout = html.Div([
 @app.callback(Output('map-container', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_map(n):
-    map_html = map_html_job.result
+    if map_html_job.result is None:
+        map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
+
+        return [
+            html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
+            html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
+        ]
+    else:
+        map_html = map_html_job.result
+        return [
+            html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
+            html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
+        ]
             
-    return [
-        html.Div(map_html.split('Total de Casos Confirmados: ')[1], hidden=True),
-        html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
-    ]
+    
 
 @app.callback(Output('title-container', 'children'),
               [Input('interval-component', 'n_intervals')])
