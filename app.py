@@ -15,13 +15,15 @@ import db_connection
 queue = Queue(connection=conn)
 
 cursor = db_connection.conn.cursor()
-cursor.execute('''CREATE TABLE COVID19
-                 (ID INT PRIMARY KEY NOT NULL,
-                  MAP_HTML TEXT NOT NULL);''')
+# cursor.execute('''CREATE TABLE COVID19
+#                  (ID INT PRIMARY KEY NOT NULL,
+#                   MAP_HTML TEXT NOT NULL);''')
 
 db_connection.conn.commit()
 
 cursor.execute('INSERT INTO COVID19 (ID,MAP_HTML) VALUES (1, %s)', (open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(),))
+
+db_connection.conn.commit()
 
 def job():
     cursor = db_connection.conn.cursor()
@@ -40,6 +42,7 @@ def job():
 
     cursor.execute('UPDATE COVID19 SET MAP_HTML = %s WHERE ID = 1', (map_html,))
 
+    db_connection.conn.commit()
     print(map_html.split('Total de Casos Confirmados: ')[1])
 
     return map_html
