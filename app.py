@@ -22,7 +22,7 @@ def job():
     clean_data = data_cleaning.clean_data(covid_cases, geo_neighborhoods)
     
     # Create map
-    map.create_map(clean_data)
+    map.create_map(clean_data)    
 
 queue.enqueue(job)
 
@@ -47,7 +47,10 @@ app.layout = html.Div([
 @app.callback(Output('map-container', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_map(n):
-    return html.Iframe(id='map', srcDoc=open('Covid-19_confirmed_cases_fortaleza.html', 'r').read(), width='800', height='800', className='iframe')
+    map_html = open('Covid-19_confirmed_cases_fortaleza.html', 'r').read()
+    print(map_html.split('Total de Casos Confirmados: ')[1])
+
+    return html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
 
 @app.callback(Output('title-container', 'children'),
               [Input('interval-component', 'n_intervals')])
