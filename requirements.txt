@@ -4,4 +4,4 @@ folium
 python-levenshtein
 gunicorn
 rq
-schedule
+psycopg2-binary
