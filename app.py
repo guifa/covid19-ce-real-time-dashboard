@@ -41,7 +41,9 @@ def job():
 queue.enqueue(job)
 
 # Create app
-app = dash.Dash(__name__)
+app = dash.Dash(__name__, external_stylesheets=['https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'])
+
+app.title='Casos Covid-19 em Fortaleza-CE'
 
 server = app.server
 
@@ -53,10 +55,15 @@ def serve_layout():
 
     return html.Div([
         html.Div([
-            html.H2(f'Casos confirmados de Covid-19 em Fortaleza-CE - Atualizado: {(pytz.utc.localize(datetime.utcnow()) - timedelta(hours=3)).strftime("%d/%m/%Y, %H:%M:%S")}'),
-            html.A('Github onde está hospedado o código.', href='https://github.com/guifa/covid19-ce-real-time-dashboard'),
             html.Div([
-                html.Iframe(id='map', srcDoc=map_html, width='800', height='800', className='iframe')
+                html.Div([
+                    html.H1('Casos confirmados de Covid-19 em Fortaleza-CE'),
+                    html.P(f'Atualizado: {(pytz.utc.localize(datetime.utcnow()) - timedelta(hours=3)).strftime("%d/%m/%Y, %H:%M:%S")}'),
+                    html.A('Github', href='https://github.com/guifa/covid19-ce-real-time-dashboard', className='fa fa-github fa-4')                    
+                ], className='inner')
+            ], id='banner'),
+            html.Div([
+                html.Iframe(id='map', srcDoc=map_html, width='100%', height='800', className='iframe')
             ])
         ], className='two.columns')
     ], className='row')
@@ -64,4 +71,4 @@ def serve_layout():
 app.layout = serve_layout
 
 if __name__ == '__main__':
-    app.run_server(dev_tools_hot_reload=False)
+    app.run_server(debug=True)
