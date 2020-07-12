@@ -7,9 +7,6 @@ import pathlib
 # Path to the data folder
 data_folder = pathlib.Path().absolute() / 'data'
 
-today = date.today()
-yesterday = today - timedelta(days=1)
-
 def getCovidCases():
     # Read csv from url
     covid_cases = pd.read_csv('https://indicadores.integrasus.saude.ce.gov.br/api/casos-coronavirus/export-csv', encoding='latin-1')
